@@ -14,4 +14,4 @@ A Python CVE intelligence CLI that enriches vulnerabilities with CVSS, EPSS, KEV
 ## Example
 
 ```bash
-cveraptor CVE-2026-21571
+cveraptor CVE-2026-21571# CVEraptor
