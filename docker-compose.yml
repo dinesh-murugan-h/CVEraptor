@@ -8,13 +8,17 @@ services:
       - ./backend/app:/app/app
     environment:
       - PYTHONUNBUFFERED=1
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 
   frontend:
-    image: nginx:alpine
+    build: ./frontend
     container_name: cveraptor-frontend
     ports:
-      - "3000:80"
+      - "3000:5173"
     volumes:
-      - ./frontend:/usr/share/nginx/html:ro
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
       - backend
