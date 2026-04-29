@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>cveraptor</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <h1>cveraptor</h1>
+      <p>CVE intelligence with CVSS, EPSS, and CISA KEV enrichment.</p>
+
+      <div class="search-box">
+        <input id="cveInput" placeholder="Search CVE, e.g. CVE-2021-44228">
+        <button onclick="searchCVE()">Search</button>
+        <button onclick="refreshCVE()">Refresh</button>
+      </div>
+    </section>
+
+    <section id="results"></section>
+  </main>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-card">
+      <button class="close-btn" onclick="closeModal()">×</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
