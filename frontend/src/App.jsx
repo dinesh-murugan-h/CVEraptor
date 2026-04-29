@@ -20,6 +20,7 @@ function App() {
     loadCves(1, resultsPerPage);
   }, []);
 
+  
   async function loadCves(nextPage = page, nextResultsPerPage = resultsPerPage) {
     setLoading(true);
     setError("");
