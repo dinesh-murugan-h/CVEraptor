@@ -260,3 +260,112 @@ def get_latest_nvd_cves(days: int = 7, limit: int = 20):
         "start_index": start_index,
         "items": items,
     }
+
+def search_nvd_cves(
+    results_per_page: int = 25,
+    page: int = 1,
+    keyword: str | None = None,
+):
+    page = max(page, 1)
+    results_per_page = min(max(results_per_page, 1), 100)
+
+    params = {
+        "resultsPerPage": results_per_page,
+    }
+
+    if keyword:
+        params["keywordSearch"] = keyword
+
+    try:
+        # First call: get total count from entire NVD database
+        count_response = requests.get(
+            NVD_URL,
+            params={**params, "resultsPerPage": 1, "startIndex": 0},
+            timeout=30,
+        )
+        count_response.raise_for_status()
+        count_data = count_response.json()
+
+        total_results = count_data.get("totalResults", 0)
+
+        if total_results == 0:
+            return {
+                "found": True,
+                "source": "nvd",
+                "page": page,
+                "results_per_page": results_per_page,
+                "total_results": 0,
+                "total_pages": 0,
+                "items": [],
+            }
+
+        total_pages = (total_results + results_per_page - 1) // results_per_page
+
+        # NVD API ordering is older-first.
+        # To make page 1 show latest CVEs, we invert the startIndex.
+        start_index = max(total_results - (page * results_per_page), 0)
+
+        actual_page_size = results_per_page
+        if start_index == 0:
+            actual_page_size = total_results - ((total_pages - 1) * results_per_page)
+            actual_page_size = max(actual_page_size, 1)
+
+        response = requests.get(
+            NVD_URL,
+            params={
+                **params,
+                "resultsPerPage": actual_page_size,
+                "startIndex": start_index,
+            },
+            timeout=30,
+        )
+        response.raise_for_status()
+
+    except requests.exceptions.Timeout:
+        return {
+            "found": False,
+            "source": "nvd",
+            "error": "NVD request timed out. Try refreshing again.",
+            "items": [],
+        }
+
+    except requests.exceptions.ConnectionError:
+        return {
+            "found": False,
+            "source": "nvd",
+            "error": "Could not connect to NVD. Check internet/Docker network and try again.",
+            "items": [],
+        }
+
+    except requests.exceptions.RequestException as error:
+        return {
+            "found": False,
+            "source": "nvd",
+            "error": f"NVD request failed: {error}",
+            "items": [],
+        }
+
+    data = response.json()
+    vulnerabilities = data.get("vulnerabilities", [])
+
+    items = [
+        extract_cve_summary(item["cve"])
+        for item in vulnerabilities
+        if "cve" in item
+    ]
+
+    items.sort(
+        key=lambda item: item.get("published") or "",
+        reverse=True,
+    )
+
+    return {
+        "found": True,
+        "source": "nvd",
+        "page": page,
+        "results_per_page": results_per_page,
+        "total_results": total_results,
+        "total_pages": total_pages,
+        "start_index": start_index,
+        "items": items,
+    }

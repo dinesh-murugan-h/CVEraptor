@@ -5,23 +5,30 @@ const API_BASE = "http://127.0.0.1:8000";
 
 function App() {
   const [cveInput, setCveInput] = useState("");
-  const [lastCve, setLastCve] = useState("");
+  const [searchMode, setSearchMode] = useState(false);
   const [selectedCve, setSelectedCve] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
   const [items, setItems] = useState([]);
+  const [page, setPage] = useState(1);
+  const [resultsPerPage, setResultsPerPage] = useState(25);
+  const [totalResults, setTotalResults] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
 
   useEffect(() => {
-    loadLatestCves();
+    loadCves(1, resultsPerPage);
   }, []);
 
-  async function loadLatestCves() {
+  async function loadCves(nextPage = page, nextResultsPerPage = resultsPerPage) {
     setLoading(true);
     setError("");
-    setLastCve("");
+    setSearchMode(false);
 
     try {
-      const response = await fetch(`${API_BASE}/api/cves/latest?days=7&limit=20`);
+      const response = await fetch(
+        `${API_BASE}/api/cves?days=7&results_per_page=${nextResultsPerPage}&page=${nextPage}`
+      );
 
       if (!response.ok) {
         throw new Error(`Backend returned HTTP ${response.status}`);
@@ -34,6 +41,10 @@ function App() {
       }
 
       setItems(result.items || []);
+      setPage(result.page || nextPage);
+      setResultsPerPage(result.results_per_page || nextResultsPerPage);
+      setTotalResults(result.total_results || 0);
+      setTotalPages(result.total_pages || 0);
     } catch (err) {
       setError(err.message);
       setItems([]);
@@ -42,8 +53,8 @@ function App() {
     }
   }
 
-  async function searchCve(cveOverride = null) {
-    const cveId = (cveOverride || cveInput).trim().toUpperCase();
+  async function searchCveById(cveIdRaw) {
+    const cveId = cveIdRaw.trim().toUpperCase();
 
     if (!cveId) {
       setError("Enter a CVE ID.");
@@ -52,7 +63,7 @@ function App() {
 
     setLoading(true);
     setError("");
-    setLastCve(cveId);
+    setSearchMode(true);
 
     try {
       const response = await fetch(`${API_BASE}/api/cve/${cveId}`);
@@ -62,23 +73,57 @@ function App() {
       }
 
       const result = await response.json();
+
       setItems([result]);
+      setPage(1);
+      setTotalPages(1);
+      setTotalResults(1);
     } catch (err) {
       setError(err.message);
       setItems([]);
     } finally {
       setLoading(false);
     }
+  }  
+  
+  async function searchCve() {
+    await searchCveById(cveInput);
   }
 
-  async function refreshCurrentView() {
-    if (lastCve) {
-      await searchCve(lastCve);
+  function refresh() {
+    if (searchMode) {
+      searchCve();
       return;
     }
 
-    await loadLatestCves();
+    loadCves(page, resultsPerPage);
   }
+
+  function goFirst() {
+    if (page > 1) loadCves(1, resultsPerPage);
+  }
+
+  function goPrevious() {
+    if (page > 1) loadCves(page - 1, resultsPerPage);
+  }
+
+  function goNext() {
+    if (page < totalPages) loadCves(page + 1, resultsPerPage);
+  }
+
+  function goLast() {
+    if (totalPages > 0 && page < totalPages) {
+      loadCves(totalPages, resultsPerPage);
+    }
+  }
+
+  function handleResultsPerPageChange(event) {
+    const value = Number(event.target.value);
+    loadCves(1, value);
+  }
+
+  const startItem = totalResults === 0 ? 0 : (page - 1) * resultsPerPage + 1;
+  const endItem = Math.min(page * resultsPerPage, totalResults);
 
   return (
     <main className="page">
@@ -99,11 +144,9 @@ function App() {
             placeholder="Search CVE, e.g. CVE-2021-44228"
           />
 
-          <button onClick={() => searchCve()}>Search</button>
-          <button className="secondary" onClick={refreshCurrentView}>
-            Refresh
-          </button>
-          <button className="secondary" onClick={loadLatestCves}>
+          <button onClick={searchCve}>Search</button>
+          <button className="secondary" onClick={refresh}>Refresh</button>
+          <button className="secondary" onClick={() => loadCves(1, resultsPerPage)}>
             Latest
           </button>
         </div>
@@ -114,13 +157,49 @@ function App() {
             className="linkBtn"
             onClick={() => {
               setCveInput("CVE-2021-44228");
-              searchCve("CVE-2021-44228");
+              searchCveById("CVE-2021-44228");
             }}
           >
             CVE-2021-44228
           </button>
         </div>
       </section>
+
+      {!searchMode && (
+        <section className="paginationBar">
+          <div className="paginationLeft">
+            <label>Items per page:</label>
+            <select value={resultsPerPage} onChange={handleResultsPerPageChange}>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+
+            <span>
+              {startItem}–{endItem} of {totalResults}
+            </span>
+          </div>
+
+          <div className="paginationButtons">
+            <button className="secondary" onClick={goFirst} disabled={page <= 1}>
+              ⏮
+            </button>
+            <button className="secondary" onClick={goPrevious} disabled={page <= 1}>
+              ‹
+            </button>
+            <span className="pageIndicator">
+              Page {page} of {totalPages || 1}
+            </span>
+            <button className="secondary" onClick={goNext} disabled={page >= totalPages}>
+              ›
+            </button>
+            <button className="secondary" onClick={goLast} disabled={page >= totalPages}>
+              ⏭
+            </button>
+          </div>
+        </section>
+      )}
 
       {loading && <div className="notice">Loading vulnerability intelligence...</div>}
       {error && <div className="error">{error}</div>}
@@ -152,26 +231,8 @@ function App() {
 }
 
 function CveTable({ items, onOpen }) {
-  const criticalCount = items.filter((item) => {
-    const severity = item?.nvd?.cvss?.base_severity || "";
-    return severity.toLowerCase() === "critical";
-  }).length;
-
-  const kevCount = items.filter((item) => item?.kev?.found).length;
-
-  const highestCvss = items.reduce((max, item) => {
-    const score = Number(item?.nvd?.cvss?.base_score);
-    return Number.isFinite(score) && score > max ? score : max;
-  }, 0);
-
   return (
     <section className="dashboard">
-      <div className="summaryCards">
-        <InfoCard title="Loaded CVEs" value={items.length} sub="Current result set" />
-        <InfoCard title="Highest CVSS" value={highestCvss || "NA"} sub="Max base score" />
-        <InfoCard title="Critical / KEV" value={`${criticalCount} / ${kevCount}`} sub="Critical severity / known exploited" danger={kevCount > 0} />
-      </div>
-
       <div className="tableWrap">
         <table>
           <thead>
@@ -241,16 +302,6 @@ function CveTable({ items, onOpen }) {
         </table>
       </div>
     </section>
-  );
-}
-
-function InfoCard({ title, value, sub, danger = false }) {
-  return (
-    <div className={`infoCard ${danger ? "dangerCard" : ""}`}>
-      <p>{title}</p>
-      <h2>{value}</h2>
-      <span>{sub}</span>
-    </div>
   );
 }
 
