@@ -432,3 +432,142 @@ a {
     flex-wrap: wrap;
   }
 }
+
+.ssvcStack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 150px;
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.ssvcStack .badge {
+  margin-left: 4px;
+}
+
+.tableWrap table {
+  min-width: 1450px;
+}
+
+.card .badge {
+  margin-left: 4px;
+}
+
+.card p {
+  line-height: 1.7;
+}
+
+.vendorProduct {
+  min-width: 150px;
+}
+
+.vendorName {
+  font-weight: 800;
+  color: #e0f2fe;
+  margin-bottom: 5px;
+}
+
+.cweStack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 90px;
+}
+
+.filterPanel {
+  background: rgba(2, 6, 23, 0.76);
+  border: 1px solid #1e293b;
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 20px;
+  backdrop-filter: blur(12px);
+}
+
+.filterHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+  margin-bottom: 16px;
+}
+
+.filterHeader h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+}
+
+.filterHeader p {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.filterActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.filterGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.filterControl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filterControl span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.filterControl select {
+  background: #020617;
+  color: #e5e7eb;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px;
+  outline: none;
+}
+
+.filterControl select:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+}
+
+.scanNote {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  background: rgba(15, 23, 42, 0.76);
+  border: 1px solid #334155;
+  color: #cbd5e1;
+  padding: 14px 16px;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .filterHeader {
+    flex-direction: column;
+  }
+
+  .filterGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .filterActions {
+    width: 100%;
+  }
+
+  .filterActions button {
+    flex: 1;
+  }
+}

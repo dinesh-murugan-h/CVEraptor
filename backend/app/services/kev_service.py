@@ -12,6 +12,18 @@ _kev_cache = {
 CACHE_TTL_SECONDS = 3600
 
 
+def normalise_cve_id(cve_id: str) -> str:
+    return cve_id.upper().strip()
+
+
+def cve_sort_key(cve_id: str):
+    try:
+        _, year, number = cve_id.split("-")
+        return int(year), int(number)
+    except Exception:
+        return 0, 0
+
+
 def load_kev_catalog():
     now = time.time()
 
@@ -28,8 +40,11 @@ def load_kev_catalog():
 
     for item in vulnerabilities:
         cve_id = item.get("cveID")
+
         if not cve_id:
             continue
+
+        cve_id = normalise_cve_id(cve_id)
 
         kev_map[cve_id] = {
             "found": True,
@@ -50,20 +65,22 @@ def load_kev_catalog():
 
 
 def get_kev_status(cve_id: str):
+    cve_id = normalise_cve_id(cve_id)
+
     try:
         kev_map = load_kev_catalog()
     except requests.exceptions.RequestException:
         return {
             "found": False,
-            "error": "Could not load CISA KEV catalog"
+            "error": "Could not load CISA KEV catalog",
         }
 
     return kev_map.get(
         cve_id,
         {
             "found": False,
-            "message": "CVE not found in CISA KEV catalog"
-        }
+            "message": "CVE not found in CISA KEV catalog",
+        },
     )
 
 
@@ -72,20 +89,60 @@ def get_kev_batch(cve_ids: list[str]):
         kev_map = load_kev_catalog()
     except requests.exceptions.RequestException:
         return {
-            cve_id: {
+            normalise_cve_id(cve_id): {
                 "found": False,
-                "error": "Could not load CISA KEV catalog"
+                "error": "Could not load CISA KEV catalog",
             }
             for cve_id in cve_ids
+            if cve_id
         }
 
-    return {
-        cve_id: kev_map.get(
+    results = {}
+
+    for cve_id in cve_ids:
+        if not cve_id:
+            continue
+
+        cve_id = normalise_cve_id(cve_id)
+
+        results[cve_id] = kev_map.get(
             cve_id,
             {
                 "found": False,
-                "message": "CVE not found in CISA KEV catalog"
-            }
+                "message": "CVE not found in CISA KEV catalog",
+            },
         )
-        for cve_id in cve_ids
-    }
+
+    return results
+
+
+def get_kev_cve_ids(keyword: str | None = None) -> list[str]:
+    """
+    Return KEV CVEs directly from the CISA KEV catalogue.
+
+    This avoids scanning NVD pages and hoping KEV entries appear in the
+    scanned window.
+    """
+    kev_map = load_kev_catalog()
+    keyword = keyword.strip().lower() if keyword else ""
+
+    cve_ids = []
+
+    for cve_id, item in kev_map.items():
+        if keyword:
+            searchable = " ".join([
+                cve_id,
+                item.get("vendor_project") or "",
+                item.get("product") or "",
+                item.get("vulnerability_name") or "",
+                item.get("short_description") or "",
+                item.get("notes") or "",
+            ]).lower()
+
+            if keyword not in searchable:
+                continue
+
+        cve_ids.append(cve_id)
+
+    cve_ids.sort(key=cve_sort_key, reverse=True)
+    return cve_ids
