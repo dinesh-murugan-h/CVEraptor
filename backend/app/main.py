@@ -1,7 +1,9 @@
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.services.nvd_service import get_nvd_cve, search_nvd_cves
@@ -17,6 +19,10 @@ from app.services.vulnrichment_service import (
     get_vulnrichment_batch,
     query_ssvc_index,
 )
+from app.services.ssvc_decision_service import (
+    decide_ssvc,
+    get_ssvc_decision_options,
+)
 
 app = FastAPI(title="cveraptor API")
 
@@ -27,6 +33,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class SsvcDecisionRequest(BaseModel):
+    cve_id: str | None = None
+    asset_presence: str = "unknown"
+    version_status: str = "unknown"
+    exploitation: str
+    automatable: str
+    technical_impact: str
+    mission_prevalence: str
+    public_wellbeing: str
+    notes: str | None = None
 
 
 def is_cve_id(value: str | None) -> bool:
@@ -53,6 +71,41 @@ def normalise_keyword(keyword: str | None) -> str:
         return ""
 
     return keyword.strip()
+
+
+def clean_sort_by(value: str | None) -> str:
+    if not value:
+        return "published"
+
+    cleaned = value.strip().lower()
+
+    if cleaned not in {"published", "last_modified"}:
+        return "published"
+
+    return cleaned
+
+
+def clean_sort_order(value: str | None) -> str:
+    if not value:
+        return "desc"
+
+    cleaned = value.strip().lower()
+
+    if cleaned not in {"asc", "desc"}:
+        return "desc"
+
+    return cleaned
+
+
+def sort_enriched_items(items: list[dict], sort_by: str, sort_order: str) -> list[dict]:
+    date_key = "last_modified" if sort_by == "last_modified" else "published"
+    reverse = sort_order == "desc"
+
+    return sorted(
+        items,
+        key=lambda item: (item.get("nvd") or {}).get(date_key) or "",
+        reverse=reverse,
+    )
 
 
 def cve_sort_key(cve_id: str):
@@ -281,6 +334,8 @@ def fallback_scan_filter(
     automatable: str,
     technical_impact: str,
     max_scan_pages: int,
+    sort_by: str,
+    sort_order: str,
 ):
     """
     Fallback for filters that cannot be globally indexed, mainly:
@@ -332,6 +387,8 @@ def fallback_scan_filter(
 
         if nvd_total_pages and scan_page >= nvd_total_pages:
             break
+
+    all_filtered_items = sort_enriched_items(all_filtered_items, sort_by, sort_order)
 
     total_results = len(all_filtered_items)
     total_pages = (
@@ -397,6 +454,21 @@ def lookup_cve(cve_id: str):
     }
 
 
+
+
+@app.get("/api/ssvc/options")
+def ssvc_options():
+    return get_ssvc_decision_options()
+
+
+@app.post("/api/ssvc/decide")
+def ssvc_decide(payload: SsvcDecisionRequest):
+    try:
+        return decide_ssvc(payload.model_dump())
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+
+
 @app.get("/api/cves")
 def list_cves(
     results_per_page: int = 25,
@@ -407,12 +479,16 @@ def list_cves(
     automatable: str = "all",
     technical_impact: str = "all",
     max_scan_pages: int = 6,
+    sort_by: str = "published",
+    sort_order: str = "desc",
 ):
     results_per_page = min(max(results_per_page, 1), 100)
     page = max(page, 1)
     max_scan_pages = min(max(max_scan_pages, 1), 20)
 
     keyword = normalise_keyword(keyword)
+    sort_by = clean_sort_by(sort_by)
+    sort_order = clean_sort_order(sort_order)
 
     kev = clean_filter_value(kev, {"all", "yes", "no"})
     exploitation = clean_filter_value(exploitation, {"all", "none", "poc", "active", "no_ssvc"})
@@ -433,6 +509,12 @@ def list_cves(
         "technical_impact": technical_impact,
     }
 
+    sort_payload = {
+        "by": sort_by,
+        "order": sort_order,
+        "scope": "global_published" if sort_by == "published" and not active_filters else "current_page",
+    }
+
     # Direct CVE test path.
     # Example: keyword=CVE-2026-32202 + KEV only + Exploitation active.
     if is_cve_id(keyword):
@@ -448,13 +530,14 @@ def list_cves(
         ):
             items = []
         else:
-            items = [item]
+            items = sort_enriched_items([item], sort_by, sort_order)
 
         return {
             "source": "direct_cve",
             "mode": "direct_cve_filter",
             "keyword": keyword,
             "filters": filters_payload,
+            "sort": sort_payload,
             "results_per_page": results_per_page,
             "page": 1,
             "total_results": len(items),
@@ -477,16 +560,19 @@ def list_cves(
             results_per_page=results_per_page,
             page=page,
             keyword=keyword or None,
+            sort_order=sort_order if sort_by == "published" else "desc",
         )
 
         nvd_items = nvd_data.get("items", [])
         enriched_items = enrich_nvd_items(nvd_items)
+        enriched_items = sort_enriched_items(enriched_items, sort_by, sort_order)
 
         return {
             "source": "nvd",
             "mode": "unfiltered",
             "keyword": keyword or None,
             "filters": filters_payload,
+            "sort": sort_payload,
             "results_per_page": results_per_page,
             "page": nvd_data.get("page", page),
             "total_results": nvd_data.get("total_results", 0),
@@ -524,6 +610,7 @@ def list_cves(
                 "mode": "ssvc_index_filter",
                 "keyword": keyword or None,
                 "filters": filters_payload,
+                "sort": sort_payload,
                 "results_per_page": results_per_page,
                 "page": page,
                 "total_results": 0,
@@ -572,12 +659,14 @@ def list_cves(
             cve_ids=page_ids,
             override_vulnrichment_map=override_vulnrichment_map,
         )
+        page_items = sort_enriched_items(page_items, sort_by, sort_order)
 
         return {
             "source": "cisa_vulnrichment_index",
             "mode": "ssvc_index_filter",
             "keyword": keyword or None,
             "filters": filters_payload,
+            "sort": sort_payload,
             "results_per_page": results_per_page,
             "page": page,
             "total_results": len(cve_ids),
@@ -601,12 +690,14 @@ def list_cves(
 
         page_ids, total_pages = paginate_ids(cve_ids, page, results_per_page)
         page_items = hydrate_cve_ids(page_ids)
+        page_items = sort_enriched_items(page_items, sort_by, sort_order)
 
         return {
             "source": "cisa_kev",
             "mode": "kev_catalog_filter",
             "keyword": keyword or None,
             "filters": filters_payload,
+            "sort": sort_payload,
             "results_per_page": results_per_page,
             "page": page,
             "total_results": len(cve_ids),
@@ -633,7 +724,10 @@ def list_cves(
         automatable=automatable,
         technical_impact=technical_impact,
         max_scan_pages=max_scan_pages,
+        sort_by=sort_by,
+        sort_order=sort_order,
     )
 
     fallback["filters"] = filters_payload
+    fallback["sort"] = sort_payload
     return fallback

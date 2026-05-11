@@ -1,3 +1,4 @@
+
 from datetime import datetime, timedelta, timezone
 import requests
 
@@ -265,9 +266,11 @@ def search_nvd_cves(
     results_per_page: int = 25,
     page: int = 1,
     keyword: str | None = None,
+    sort_order: str = "desc",
 ):
     page = max(page, 1)
     results_per_page = min(max(results_per_page, 1), 100)
+    sort_order = sort_order if sort_order in {"asc", "desc"} else "desc"
 
     params = {
         "resultsPerPage": results_per_page,
@@ -301,14 +304,19 @@ def search_nvd_cves(
 
         total_pages = (total_results + results_per_page - 1) // results_per_page
 
-        # NVD API ordering is older-first.
-        # To make page 1 show latest CVEs, we invert the startIndex.
-        start_index = max(total_results - (page * results_per_page), 0)
+        # NVD API ordering is older-first by publication date.
+        # For newest-first, invert the startIndex so page 1 shows recent CVEs.
+        # For oldest-first, use normal forward pagination.
+        if sort_order == "asc":
+            start_index = (page - 1) * results_per_page
+            actual_page_size = results_per_page
+        else:
+            start_index = max(total_results - (page * results_per_page), 0)
 
-        actual_page_size = results_per_page
-        if start_index == 0:
-            actual_page_size = total_results - ((total_pages - 1) * results_per_page)
-            actual_page_size = max(actual_page_size, 1)
+            actual_page_size = results_per_page
+            if start_index == 0:
+                actual_page_size = total_results - ((total_pages - 1) * results_per_page)
+                actual_page_size = max(actual_page_size, 1)
 
         response = requests.get(
             NVD_URL,
@@ -356,7 +364,7 @@ def search_nvd_cves(
 
     items.sort(
         key=lambda item: item.get("published") or "",
-        reverse=True,
+        reverse=sort_order == "desc",
     )
 
     return {

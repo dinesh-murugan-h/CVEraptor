@@ -1,0 +1,320 @@
+{
+  "version": "cisa-coordinator-v2.0.3-local-editable",
+  "description": "Editable local SSVC decision table for cveraptor. Update this JSON if the decision policy changes.",
+  "allowed_values": {
+    "asset_presence": [
+      "installed",
+      "not_installed",
+      "unknown"
+    ],
+    "version_status": [
+      "affected",
+      "not_affected",
+      "unknown"
+    ],
+    "exploitation": [
+      "none",
+      "poc",
+      "active"
+    ],
+    "automatable": [
+      "no",
+      "yes"
+    ],
+    "technical_impact": [
+      "partial",
+      "total"
+    ],
+    "mission_prevalence": [
+      "minimal",
+      "support",
+      "essential"
+    ],
+    "public_wellbeing": [
+      "minimal",
+      "material",
+      "irreversible"
+    ],
+    "mission_wellbeing": [
+      "low",
+      "medium",
+      "high"
+    ],
+    "decision": [
+      "Track",
+      "Track*",
+      "Attend",
+      "Act"
+    ]
+  },
+  "mission_wellbeing_derivation": {
+    "low": "mission_prevalence=minimal and public_wellbeing=minimal",
+    "medium": "mission_prevalence=support or public_wellbeing=material, unless high applies",
+    "high": "mission_prevalence=essential or public_wellbeing=irreversible"
+  },
+  "decision_descriptions": {
+    "Track": "Track in normal vulnerability management. No immediate out-of-cycle action is required for this system, but reassess if exploitation or asset context changes.",
+    "Track*": "Track closely. Validate inventory/version data, check mitigation availability, and get a second opinion before dismissing.",
+    "Attend": "Attend to this sooner than normal patching. Involve the relevant system owner and plan remediation or mitigation.",
+    "Act": "Act immediately. Escalate to the relevant technical owner/leadership and coordinate urgent mitigation or remediation."
+  },
+  "asset_context_policy": {
+    "not_installed": "effective decision becomes Track",
+    "not_affected_version": "effective decision becomes Track",
+    "unknown_asset_or_version": "raw Track becomes Track*; Attend and Act are retained"
+  },
+  "decision_table": [
+    {
+      "exploitation": "none",
+      "automatable": "no",
+      "technical_impact": "partial",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "no",
+      "technical_impact": "partial",
+      "mission_wellbeing": "medium",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "no",
+      "technical_impact": "partial",
+      "mission_wellbeing": "high",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "no",
+      "technical_impact": "total",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "no",
+      "technical_impact": "total",
+      "mission_wellbeing": "medium",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "no",
+      "technical_impact": "total",
+      "mission_wellbeing": "high",
+      "decision": "Track*"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "yes",
+      "technical_impact": "partial",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "yes",
+      "technical_impact": "partial",
+      "mission_wellbeing": "medium",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "yes",
+      "technical_impact": "partial",
+      "mission_wellbeing": "high",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "yes",
+      "technical_impact": "total",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "yes",
+      "technical_impact": "total",
+      "mission_wellbeing": "medium",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "none",
+      "automatable": "yes",
+      "technical_impact": "total",
+      "mission_wellbeing": "high",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "no",
+      "technical_impact": "partial",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "no",
+      "technical_impact": "partial",
+      "mission_wellbeing": "medium",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "no",
+      "technical_impact": "partial",
+      "mission_wellbeing": "high",
+      "decision": "Track*"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "no",
+      "technical_impact": "total",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "no",
+      "technical_impact": "total",
+      "mission_wellbeing": "medium",
+      "decision": "Track*"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "no",
+      "technical_impact": "total",
+      "mission_wellbeing": "high",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "yes",
+      "technical_impact": "partial",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "yes",
+      "technical_impact": "partial",
+      "mission_wellbeing": "medium",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "yes",
+      "technical_impact": "partial",
+      "mission_wellbeing": "high",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "yes",
+      "technical_impact": "total",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "yes",
+      "technical_impact": "total",
+      "mission_wellbeing": "medium",
+      "decision": "Track*"
+    },
+    {
+      "exploitation": "poc",
+      "automatable": "yes",
+      "technical_impact": "total",
+      "mission_wellbeing": "high",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "no",
+      "technical_impact": "partial",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "no",
+      "technical_impact": "partial",
+      "mission_wellbeing": "medium",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "no",
+      "technical_impact": "partial",
+      "mission_wellbeing": "high",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "no",
+      "technical_impact": "total",
+      "mission_wellbeing": "low",
+      "decision": "Track"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "no",
+      "technical_impact": "total",
+      "mission_wellbeing": "medium",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "no",
+      "technical_impact": "total",
+      "mission_wellbeing": "high",
+      "decision": "Act"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "yes",
+      "technical_impact": "partial",
+      "mission_wellbeing": "low",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "yes",
+      "technical_impact": "partial",
+      "mission_wellbeing": "medium",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "yes",
+      "technical_impact": "partial",
+      "mission_wellbeing": "high",
+      "decision": "Act"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "yes",
+      "technical_impact": "total",
+      "mission_wellbeing": "low",
+      "decision": "Attend"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "yes",
+      "technical_impact": "total",
+      "mission_wellbeing": "medium",
+      "decision": "Act"
+    },
+    {
+      "exploitation": "active",
+      "automatable": "yes",
+      "technical_impact": "total",
+      "mission_wellbeing": "high",
+      "decision": "Act"
+    }
+  ]
+}

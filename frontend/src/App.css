@@ -1,3 +1,4 @@
+
 :root {
   color-scheme: dark;
   background: #050816;
@@ -18,9 +19,10 @@ body {
 }
 
 .page {
-  max-width: 1220px;
-  margin: auto;
-  padding: 46px 22px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 46px clamp(18px, 3vw, 64px);
 }
 
 .hero {
@@ -58,7 +60,7 @@ body {
   justify-content: center;
   gap: 10px;
   margin: 28px auto 0;
-  max-width: 760px;
+  max-width: 920px;
 }
 
 input {
@@ -378,8 +380,8 @@ a {
 }
 
 .paginationBar {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto minmax(260px, 1fr);
   align-items: center;
   gap: 18px;
   background: rgba(2, 6, 23, 0.76);
@@ -390,18 +392,34 @@ a {
 }
 
 .paginationLeft,
+.sortControls,
 .paginationButtons {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
-.paginationLeft label {
+.paginationLeft {
+  justify-content: flex-start;
+}
+
+.sortControls {
+  justify-content: center;
+}
+
+.paginationButtons {
+  justify-content: flex-end;
+}
+
+.paginationLeft label,
+.sortControls label {
   color: #94a3b8;
   font-size: 14px;
 }
 
-.paginationLeft select {
+.paginationLeft select,
+.sortControls select {
   background: #020617;
   color: #e5e7eb;
   border: 1px solid #334155;
@@ -420,13 +438,13 @@ a {
   cursor: not-allowed;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .paginationBar {
-    flex-direction: column;
-    align-items: stretch;
+    grid-template-columns: 1fr;
   }
 
   .paginationLeft,
+  .sortControls,
   .paginationButtons {
     justify-content: center;
     flex-wrap: wrap;
@@ -569,5 +587,292 @@ a {
 
   .filterActions button {
     flex: 1;
+  }
+}
+.viewToggle {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 24px auto 0;
+}
+
+button.activeView {
+  background: #38bdf8;
+  color: #020617;
+  border: 1px solid rgba(56, 189, 248, 0.7);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.checkerPage {
+  display: grid;
+  gap: 20px;
+}
+
+.checkerIntro,
+.checkerPanel,
+.decisionResult {
+  background: rgba(2, 6, 23, 0.76);
+  border: 1px solid #1e293b;
+  border-radius: 18px;
+  padding: 22px;
+  backdrop-filter: blur(12px);
+}
+
+.checkerIntro h2,
+.checkerPanel h3,
+.decisionResult h2,
+.decisionResult h3 {
+  margin-top: 0;
+}
+
+.checkerIntro p,
+.decisionResult p,
+.decisionResult li {
+  color: #cbd5e1;
+  line-height: 1.55;
+}
+
+.checkerGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.questionGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.formControl {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formControl span {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.formControl select,
+.formControl textarea {
+  background: #020617;
+  color: #e5e7eb;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px;
+  outline: none;
+  font: inherit;
+}
+
+.formControl textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.formControl select:focus,
+.formControl textarea:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.12);
+}
+
+.inlineInput {
+  display: flex;
+  gap: 10px;
+}
+
+.inlineInput input {
+  width: 100%;
+}
+
+.wideControl {
+  grid-column: 1 / -1;
+}
+
+.loadedCveCard {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid #334155;
+  background: rgba(15, 23, 42, 0.82);
+}
+
+.loadedCveCard h3 {
+  margin: 4px 0 10px;
+  color: #38bdf8;
+}
+
+.loadedCveCard p {
+  color: #cbd5e1;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+.loadedCveCard span {
+  color: #94a3b8;
+}
+
+.loadedCveCardExpanded {
+  text-align: left;
+}
+
+.loadedCveHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.loadedCveStatus {
+  color: #94a3b8;
+  margin: 0;
+}
+
+.loadedCveSection {
+  margin-top: 16px;
+}
+
+.loadedCveSection h4 {
+  margin: 0 0 8px;
+  color: #e5e7eb;
+  font-size: 15px;
+}
+
+.checkerDetailGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.detailMiniCard {
+  overflow: hidden;
+}
+
+.detailMiniCard > span:first-child {
+  color: #e5e7eb;
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+
+.detailMiniCard p {
+  color: #e5e7eb;
+  font-size: 13px;
+  line-height: 1.55;
+  margin: 6px 0;
+}
+
+.detailMiniCard p span:first-child {
+  color: #94a3b8;
+}
+
+.detailMiniCard code {
+  font-size: 12px;
+  line-height: 1.35;
+  margin-top: 4px;
+}
+
+.compactList {
+  margin: 0;
+  padding-left: 18px;
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.compactList li {
+  margin-bottom: 10px;
+}
+
+.checkerReferences {
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-all;
+}
+
+.prefillNote {
+  border-top: 1px solid #334155;
+  padding-top: 12px;
+  margin-top: 14px !important;
+}
+
+.checkerActions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.decisionResult {
+  border-left: 8px solid #334155;
+}
+
+.decisionResult h2 {
+  font-size: 42px;
+  margin-bottom: 6px;
+}
+
+.decisionSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin: 18px 0;
+}
+
+.miniCard {
+  background: rgba(15, 23, 42, 0.9);
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.miniCard span {
+  display: block;
+  color: #94a3b8;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.miniCard strong {
+  color: #e5e7eb;
+  text-transform: capitalize;
+}
+
+.decision-track {
+  border-left-color: #22c55e;
+}
+
+.decision-track-star {
+  border-left-color: #eab308;
+}
+
+.decision-attend {
+  border-left-color: #f97316;
+}
+
+.decision-act {
+  border-left-color: #ef4444;
+}
+
+@media (max-width: 900px) {
+  .checkerGrid,
+  .questionGrid,
+  .decisionSummaryGrid,
+  .checkerDetailGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .inlineInput {
+    flex-direction: column;
   }
 }
